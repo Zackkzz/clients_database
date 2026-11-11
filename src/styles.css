@@ -2791,10 +2791,12 @@ button {
   flex-shrink: 0;
   cursor: pointer;
 }
-.row-selection-target:focus-within { background: var(--accent-selected); }
+.row-selection-target:has(input:focus-visible) { background: var(--accent-selected); }
 /* Opacity preserves the checkbox's hit area and keyboard focus. */
 @media (hover: hover) and (pointer: fine) {
-  tbody > tr:not(:hover, :focus-within)
+  .name-cell:not(:hover)
+    > .row-selection-target input:not(:checked, :focus-visible),
+  .group-row:not(:hover, :focus-within)
     .row-selection-target input:not(:checked, :indeterminate) {
     opacity: 0;
   }
