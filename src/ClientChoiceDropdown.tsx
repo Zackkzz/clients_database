@@ -40,6 +40,7 @@ export function ClientChoiceDropdown({
   const input = useRef<HTMLInputElement>(null);
   const id = useId();
   const multiple = [14, 15].includes(field.type);
+  const singleCountry = !multiple && field.name === "Country";
   const canAdd = path === "Customer_Type" || path === "Main_Product_Used";
   const selection = useRef(0);
   const [selecting, setSelecting] = useState(false);
@@ -139,31 +140,34 @@ export function ClientChoiceDropdown({
           setOpen(true);
         }}
       >
-        {selected.map((option) => (
-          <span
-            className="client-choice-chip"
-            key={option.id}
-            style={
-              path === "Customer_Type"
-                ? customerTypeColors(option.label)
-                : undefined
-            }
-          >
-            {option.label}
-            <button
-              type="button"
-              aria-label={`Remove ${option.label}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                change(
-                  multiple ? selected.filter((o) => o.id !== option.id) : null,
-                );
-              }}
+        {!singleCountry &&
+          selected.map((option) => (
+            <span
+              className="client-choice-chip"
+              key={option.id}
+              style={
+                path === "Customer_Type"
+                  ? customerTypeColors(option.label)
+                  : undefined
+              }
             >
-              ×
-            </button>
-          </span>
-        ))}
+              {option.label}
+              <button
+                type="button"
+                aria-label={`Remove ${option.label}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  change(
+                    multiple
+                      ? selected.filter((o) => o.id !== option.id)
+                      : null,
+                  );
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ))}
         <input
           ref={input}
           disabled={selecting}
@@ -175,8 +179,8 @@ export function ClientChoiceDropdown({
           aria-activedescendant={
             open && available[active] ? `${id}-${active}` : undefined
           }
-          placeholder={selected.length ? "" : "Select…"}
-          value={query}
+          placeholder={singleCountry || !selected.length ? "Select…" : ""}
+          value={singleCountry && !open ? (selected[0]?.label ?? "") : query}
           onFocus={() => setOpen(true)}
           onChange={(e) => {
             selection.current++;
