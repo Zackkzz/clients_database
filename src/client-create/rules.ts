@@ -1,3 +1,7 @@
+import {
+  isVisibleSubformField,
+  isWritableSubformField,
+} from "../subform-workflows";
 import type { FormDefinition, RelatedForm, FormField, Json } from "./types";
 import { asObject } from "./values";
 /** Native create-load rules that metadata alone does not include. */
@@ -42,6 +46,7 @@ export function applyCreateRules(
   if (form === "Client") {
     [
       "plain_BOM",
+      "System_Section",
       "Accounts", // Excluded from the widget Add Client form for every team.
       "BOM_Stack_View",
       "Show_BOM",
@@ -59,6 +64,7 @@ export function applyCreateRules(
       "Team",
       "Access",
       "Flag",
+      "State",
     ].forEach((name) => hidden.add(name));
     if (fields.some((field) => field.name === "Is_Subform"))
       initial.Is_Subform = true;
@@ -76,6 +82,8 @@ export function applyCreateRules(
       ["Leads", "Follow_Up_Frequency"].forEach((name) => hidden.add(name));
     if (team?.id !== "3932750000196993014")
       [
+        "Channel_Sales_Section",
+        "Main_Product_Used",
         "Follow_Up_Frequency",
         "Last_Meeting",
         "Installs_Per_Month",
@@ -90,7 +98,6 @@ export function applyCreateRules(
           Site: ["Site_Address_CMP", "Client_Name", "Client"],
           Staff: ["Contact_Number", "Contact_Email", "Client"],
           Leads: ["Client"],
-          Accounts: ["Username"],
         }
       : {};
   return {
@@ -98,12 +105,27 @@ export function applyCreateRules(
     fields: fields.map((field) => ({
       ...field,
       hidden: field.hidden || hidden.has(field.name),
+      choices:
+        form === "Client" &&
+        field.name === "State" &&
+        !field.choices.some((choice) => choice.value === "Please input country")
+          ? [
+              ...field.choices,
+              { value: "Please input country", label: "Please input country" },
+            ]
+          : field.choices,
       readOnly:
         field.readOnly || (form === "Client" && field.name === "Last_Meeting"),
       fields: field.fields.map((child) => ({
         ...child,
+        readOnly:
+          child.readOnly ||
+          (form === "Client" &&
+            !isWritableSubformField(field.name, child.name)),
         hidden:
           child.hidden ||
+          (form === "Client" &&
+            !isVisibleSubformField(field.name, child.name)) ||
           Boolean(childHidden[field.name]?.includes(child.name)),
       })),
     })),

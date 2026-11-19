@@ -255,6 +255,27 @@ function RecordDrawer({
     if (motion.current) void motion.current.close(onClosed);
     else onClosed();
   };
+  const [detailContext, setDetailContext] =
+    useState<ClientFormContext | null>();
+  const [detailContextError, setDetailContextError] = useState("");
+  useEffect(() => {
+    let canceled = false;
+    loadFormContext()
+      .then((context) => {
+        if (!canceled) setDetailContext(context);
+      })
+      .catch((reason) => {
+        if (!canceled)
+          setDetailContextError(
+            reason instanceof Error
+              ? reason.message
+              : "Could not load Client form visibility.",
+          );
+      });
+    return () => {
+      canceled = true;
+    };
+  }, []);
   const [meetingEditing, setMeetingEditing] = useState(false);
   const [draft, setDraft] = useState<Client>({
     ...client,
@@ -447,6 +468,11 @@ function RecordDrawer({
               <Tag key={type} value={type} type />
             ))}
           </div>
+          {detailContextError && (
+            <p className="error" role="alert">
+              {detailContextError}
+            </p>
+          )}
           <form id="client-detail-form">
             <fieldset
               className="detail-fields-container"
@@ -455,6 +481,7 @@ function RecordDrawer({
               <ClientDetailGrid>
                 {renderClientDetailFields({
                   client: draft,
+                  context: detailContext,
                   disabled: saving || priorityPending,
                   demo: mode === "demo",
                   change: (name, value) =>
@@ -975,11 +1002,11 @@ function App() {
       : `Filtered by ${filteredFields.length} fields`;
   const hasFilters = Boolean(
     filters ||
-      conditions.followUp ||
-      query.search.trim() ||
-      query.state ||
-      query.priority ||
-      query.type,
+    conditions.followUp ||
+    query.search.trim() ||
+    query.state ||
+    query.priority ||
+    query.type,
   );
   const loaded = loadProgress?.records.length ?? 0;
   const incomplete = loading || !!error;
@@ -1178,8 +1205,9 @@ function App() {
               onClick={() => {
                 if (showExportOptions) setExportOpen(true);
                 else
-                  void exportRecords("all", false)
-                    .catch((reason) => setToast(reason.message));
+                  void exportRecords("all", false).catch((reason) =>
+                    setToast(reason.message),
+                  );
               }}
             />
             <IconButton

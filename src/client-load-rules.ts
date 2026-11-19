@@ -47,3 +47,32 @@ export function clientStaffContactPayload(values: Record<string, unknown>) {
 export function clientEditDefaults() {
   return { Is_Subform: true, Show_BOM: true, BOM_Display: null };
 }
+
+/** Client edit-load hides Channel Sales and Meeting Notes for every other team. */
+export function clientChannelSalesVisible(
+  context: ClientFormContext | null | undefined,
+) {
+  return context?.teamId === "3932750000196993014";
+}
+
+const channelSalesFields = new Set([
+  "Main_Product_Used",
+  "Follow_Up_Frequency",
+  "Last_Meeting",
+  "Installs_Per_Month",
+  "Switch_to_Sungrow",
+  "Used_Sungrow_Before",
+]);
+
+export function clientEditFieldVisible(
+  name: string,
+  context: ClientFormContext | null | undefined,
+) {
+  if (["plain_BOM", "BOM_Stack_View", "System_Section"].includes(name))
+    return false;
+  // The shared workflow only enters these branches when a Staff record exists.
+  if (name === "Service_Ticket_Default")
+    return context === null || context?.sales === false;
+  if (name === "Follow_Up_Frequency" && context && !context.sales) return false;
+  return !channelSalesFields.has(name) || clientChannelSalesVisible(context);
+}

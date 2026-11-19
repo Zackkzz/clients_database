@@ -90,11 +90,6 @@ export function SubformEditor({
   );
   useEffect(() => {
     let canceled = false;
-    // Inline Meeting Notes are available to all teams; Creator enforces record access.
-    if (inlineMeetingNote) {
-      setContextLoading(false);
-      return;
-    }
     setContextLoading(true);
     setContextError("");
     loadFormContext()
@@ -143,6 +138,12 @@ export function SubformEditor({
   }, []);
   useEffect(() => {
     let canceled = false;
+    // Resolve edit-load visibility before requesting hidden Meeting Note records.
+    if (
+      inlineMeetingNote &&
+      (contextLoading || !isVisibleClientSubform("Meeting_Note", formContext))
+    )
+      return;
     setLoading(true);
     setError("");
     store
@@ -888,6 +889,14 @@ export function SubformEditor({
     </>
   );
   if (inlineMeetingNote) {
+    if (contextLoading) return <p role="status">Loading form visibility…</p>;
+    if (contextError)
+      return (
+        <p className="error" role="alert">
+          {contextError}
+        </p>
+      );
+    if (!isVisibleClientSubform("Meeting_Note", formContext)) return null;
     return (
       <section className="inline-meeting-notes" aria-label="Meeting Note">
         {content}
